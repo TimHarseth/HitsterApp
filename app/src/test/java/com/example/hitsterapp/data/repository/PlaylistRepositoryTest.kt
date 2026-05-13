@@ -1,6 +1,7 @@
 package com.example.hitsterapp.data.repository
 
 import com.example.hitsterapp.auth.SpotifyAuthManager
+import com.example.hitsterapp.data.db.HitsterDatabase
 import com.example.hitsterapp.data.db.dao.PlayedTrackDao
 import com.example.hitsterapp.data.db.dao.PlaylistDao
 import com.example.hitsterapp.data.db.dao.PlaylistWithProgress
@@ -14,10 +15,12 @@ import com.example.hitsterapp.data.network.model.SpotifyArtist
 import com.example.hitsterapp.data.network.model.SpotifyTrack
 import com.example.hitsterapp.data.network.model.TrackItem
 import com.example.hitsterapp.data.network.model.TracksPage
+import androidx.room.withTransaction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -26,6 +29,7 @@ import org.junit.Test
 
 class PlaylistRepositoryTest {
 
+    private val db: HitsterDatabase = mockk(relaxed = true)
     private val playlistDao: PlaylistDao = mockk(relaxed = true)
     private val trackDao: TrackDao = mockk(relaxed = true)
     private val playedTrackDao: PlayedTrackDao = mockk(relaxed = true)
@@ -36,8 +40,13 @@ class PlaylistRepositoryTest {
 
     @Before
     fun setup() {
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        coEvery { db.withTransaction(any<suspend () -> Unit>()) } coAnswers {
+            @Suppress("UNCHECKED_CAST")
+            (args[1] as suspend () -> Unit).invoke()
+        }
         repository = PlaylistRepository(
-            playlistDao, trackDao, playedTrackDao, spotifyApiService, spotifyAuthManager
+            db, playlistDao, trackDao, playedTrackDao, spotifyApiService, spotifyAuthManager
         )
     }
 

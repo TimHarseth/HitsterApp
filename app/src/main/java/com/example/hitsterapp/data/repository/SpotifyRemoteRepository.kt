@@ -15,7 +15,7 @@ import kotlin.coroutines.resume
 class SpotifyRemoteRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private var appRemote: SpotifyAppRemote? = null
+    @Volatile private var appRemote: SpotifyAppRemote? = null
 
     suspend fun connect(): Boolean = suspendCancellableCoroutine { cont ->
         val params = ConnectionParams.Builder(BuildConfig.SPOTIFY_CLIENT_ID)
@@ -33,6 +33,11 @@ class SpotifyRemoteRepository @Inject constructor(
                 if (cont.isActive) cont.resume(false)
             }
         })
+
+        cont.invokeOnCancellation {
+            appRemote?.let { SpotifyAppRemote.disconnect(it) }
+            appRemote = null
+        }
     }
 
     fun play(trackId: String) {

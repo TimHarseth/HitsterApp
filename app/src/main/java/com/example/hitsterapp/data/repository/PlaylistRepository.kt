@@ -1,6 +1,8 @@
 package com.example.hitsterapp.data.repository
 
+import androidx.room.withTransaction
 import com.example.hitsterapp.auth.SpotifyAuthManager
+import com.example.hitsterapp.data.db.HitsterDatabase
 import com.example.hitsterapp.data.db.dao.PlayedTrackDao
 import com.example.hitsterapp.data.db.dao.PlaylistDao
 import com.example.hitsterapp.data.db.dao.TrackDao
@@ -25,6 +27,7 @@ data class PlaylistUiModel(
 
 @Singleton
 class PlaylistRepository @Inject constructor(
+    private val db: HitsterDatabase,
     private val playlistDao: PlaylistDao,
     private val trackDao: TrackDao,
     private val playedTrackDao: PlayedTrackDao,
@@ -61,26 +64,27 @@ class PlaylistRepository @Inject constructor(
 
         val validTracks = allItems.mapNotNull { it.track }
 
-        playlistDao.insert(
-            PlaylistEntity(
-                id = playlistId,
-                name = playlistInfo.name,
-                url = url,
-                totalTrackCount = validTracks.size
-            )
-        )
-
-        trackDao.insertAll(
-            validTracks.map { track ->
-                TrackEntity(
-                    id = track.id,
-                    playlistId = playlistId,
-                    title = track.name,
-                    artists = track.artists.joinToString(", ") { it.name },
-                    releaseYear = track.album.releaseDate.take(4).toIntOrNull() ?: 0
+        db.withTransaction {
+            playlistDao.insert(
+                PlaylistEntity(
+                    id = playlistId,
+                    name = playlistInfo.name,
+                    url = url,
+                    totalTrackCount = validTracks.size
                 )
-            }
-        )
+            )
+            trackDao.insertAll(
+                validTracks.map { track ->
+                    TrackEntity(
+                        id = track.id,
+                        playlistId = playlistId,
+                        title = track.name,
+                        artists = track.artists.joinToString(", ") { it.name },
+                        releaseYear = track.album.releaseDate.take(4).toIntOrNull() ?: 0
+                    )
+                }
+            )
+        }
     }
 
     suspend fun deletePlaylist(playlistId: String) {

@@ -31,4 +31,12 @@ class SpotifyUrlParserTest {
     fun `returns null for empty string`() {
         assertNull(SpotifyUrlParser.extractPlaylistId(""))
     }
+
+    @Test
+    fun `extracts id containing underscores and hyphens`() {
+        val id = SpotifyUrlParser.extractPlaylistId(
+            "https://open.spotify.com/playlist/some_playlist-id"
+        )
+        assertEquals("some_playlist-id", id)
+    }
 }
