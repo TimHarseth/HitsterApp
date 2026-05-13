@@ -8,6 +8,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -43,6 +44,7 @@ class HomeViewModelTest {
 
     @Test
     fun `playlists are exposed from repository`() = runTest {
+        backgroundScope.launch(testDispatcher) { viewModel.playlists.collect {} }
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(samplePlaylists, viewModel.playlists.value)
     }

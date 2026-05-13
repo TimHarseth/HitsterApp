@@ -26,6 +26,15 @@ fun HomeScreen(
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var menuPlaylist by remember { mutableStateOf<PlaylistUiModel?>(null) }
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(errorMessage) {
+        if (errorMessage != null) {
+            snackbarHostState.showSnackbar(errorMessage!!)
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -35,7 +44,8 @@ fun HomeScreen(
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add playlist")
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         if (playlists.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) {
