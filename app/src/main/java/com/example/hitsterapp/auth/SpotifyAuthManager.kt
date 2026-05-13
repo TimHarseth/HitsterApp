@@ -2,6 +2,7 @@ package com.example.hitsterapp.auth
 
 import android.app.Activity
 import android.net.Uri
+import android.util.Log
 import androidx.browser.customtabs.CustomTabsIntent
 import com.example.hitsterapp.BuildConfig
 import com.example.hitsterapp.data.datastore.TokenDataStore
@@ -50,6 +51,7 @@ class SpotifyAuthManager @Inject constructor(
             pendingCodeVerifier = null
             true
         } catch (e: Exception) {
+            Log.e("SpotifyAuth", "Token exchange failed", e)
             false
         }
     }
@@ -75,6 +77,7 @@ class SpotifyAuthManager @Inject constructor(
             )
             response.accessToken
         } catch (e: Exception) {
+            Log.e("SpotifyAuth", "Token refresh failed", e)
             null
         }
     }
