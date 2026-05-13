@@ -61,10 +61,17 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         val data = intent.data ?: return
         if (data.scheme == "hitsterapp" && data.host == "callback") {
+            val error = data.getQueryParameter("error")
+            if (error != null) {
+                spotifyAuthManager.launchAuth(this@MainActivity)
+                return
+            }
             val code = data.getQueryParameter("code") ?: return
             lifecycleScope.launch {
                 if (spotifyAuthManager.handleCallback(code)) {
                     authState.value = AuthState.Authenticated
+                } else {
+                    spotifyAuthManager.launchAuth(this@MainActivity)
                 }
             }
         }
