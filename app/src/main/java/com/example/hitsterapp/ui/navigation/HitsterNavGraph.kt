@@ -7,12 +7,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.hitsterapp.ui.home.HomeScreen
 
 @Composable
 fun HitsterNavGraph(navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = Screen.HOME) {
         composable(Screen.HOME) {
-            androidx.compose.material3.Text("Home — coming soon")
+            HomeScreen(
+                onPlaylistSelected = { playlistId ->
+                    navController.navigate(Screen.player(playlistId))
+                }
+            )
         }
         composable(
             route = Screen.PLAYER,
