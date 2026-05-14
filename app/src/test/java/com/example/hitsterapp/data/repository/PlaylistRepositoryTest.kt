@@ -54,12 +54,11 @@ class PlaylistRepositoryTest {
     fun `fetchAndSavePlaylist saves playlist and tracks to Room`() = runTest {
         coEvery { spotifyAuthManager.getValidAccessToken() } returns "token"
         coEvery { spotifyApiService.getPlaylist("abc123") } returns PlaylistResponse(
-            id = "abc123",
             name = "My Playlist",
-            tracks = TracksPage(
+            items = TracksPage(
                 items = listOf(
                     TrackItem(SpotifyTrack("t1", "Song One",
-                        listOf(SpotifyArtist("Artist A")), SpotifyAlbum("1990-05-01")))
+                        listOf(SpotifyArtist("Artist A")), SpotifyAlbum("1990-05-01"), null))
                 ),
                 next = null
             )
