@@ -3,13 +3,12 @@ package com.example.hitsterapp.data.network.model
 import com.google.gson.annotations.SerializedName
 
 data class PlaylistResponse(
-    val id: String,
     val name: String,
-    val tracks: TracksPage
+    val items: TracksPage?
 )
 
 data class TracksPage(
-    val items: List<TrackItem>,
+    val items: List<TrackItem>?,
     val next: String?
 )
 
@@ -18,10 +17,11 @@ data class TrackItem(
 )
 
 data class SpotifyTrack(
-    val id: String,
+    val id: String?,
     val name: String,
-    val artists: List<SpotifyArtist>,
-    val album: SpotifyAlbum
+    val artists: List<SpotifyArtist>?,
+    val album: SpotifyAlbum?,
+    @SerializedName("external_urls") val externalUrls: SpotifyExternalUrls?
 )
 
 data class SpotifyArtist(
@@ -30,4 +30,8 @@ data class SpotifyArtist(
 
 data class SpotifyAlbum(
     @SerializedName("release_date") val releaseDate: String
+)
+
+data class SpotifyExternalUrls(
+    val spotify: String?
 )

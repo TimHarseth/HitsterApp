@@ -37,4 +37,21 @@ class TokenDataStore @Inject constructor(@ApplicationContext private val context
 
     suspend fun getExpiresAt(): Long =
         context.dataStore.data.first()[expiresAtKey] ?: 0L
+
+    private val codeVerifierKey = stringPreferencesKey("pending_code_verifier")
+
+    suspend fun saveCodeVerifier(verifier: String) {
+        context.dataStore.edit { prefs ->
+            prefs[codeVerifierKey] = verifier
+        }
+    }
+
+    suspend fun getCodeVerifier(): String? =
+        context.dataStore.data.first()[codeVerifierKey]
+
+    suspend fun clearCodeVerifier() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(codeVerifierKey)
+        }
+    }
 }

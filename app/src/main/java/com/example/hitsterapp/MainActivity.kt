@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import android.util.Log
 import com.example.hitsterapp.auth.SpotifyAuthManager
 import com.example.hitsterapp.ui.navigation.HitsterNavGraph
 import com.example.hitsterapp.ui.theme.HitsterAppTheme
@@ -34,11 +35,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         lifecycleScope.launch {
-            authState.value = if (spotifyAuthManager.hasValidAuth()) {
-                AuthState.Authenticated
-            } else {
-                spotifyAuthManager.launchAuth(this@MainActivity)
-                AuthState.AwaitingCallback
+            val data = intent.data
+            if (data?.scheme == "hitsterapp" && data.host == "callback") {
+                authState.value = AuthState.AwaitingCallback
+                processCallback(intent)
+                return@launch
+            }
+            authState.value = when {
+                spotifyAuthManager.hasValidAuth() -> AuthState.Authenticated
+                spotifyAuthManager.hasPendingVerifier() -> {
+                    Log.d("MainActivity", "Pending verifier found, waiting for callback...")
+                    AuthState.AwaitingCallback
+                }
+                else -> {
+                    spotifyAuthManager.launchAuth(this@MainActivity)
+                    AuthState.AwaitingCallback
+                }
             }
         }
 
@@ -61,19 +73,25 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         val data = intent.data ?: return
         if (data.scheme == "hitsterapp" && data.host == "callback") {
-            val error = data.getQueryParameter("error")
-            if (error != null) {
-                spotifyAuthManager.launchAuth(this@MainActivity)
-                return
-            }
-            val code = data.getQueryParameter("code") ?: return
-            lifecycleScope.launch {
-                if (spotifyAuthManager.handleCallback(code)) {
-                    authState.value = AuthState.Authenticated
-                } else {
-                    spotifyAuthManager.launchAuth(this@MainActivity)
-                }
-            }
+            lifecycleScope.launch { processCallback(intent) }
+        }
+    }
+
+    private suspend fun processCallback(intent: Intent) {
+        val data = intent.data ?: return
+        val error = data.getQueryParameter("error")
+        if (error != null) {
+            Log.e("MainActivity", "Spotify auth error: $error")
+            spotifyAuthManager.launchAuth(this@MainActivity)
+            return
+        }
+        val code = data.getQueryParameter("code") ?: return
+        if (spotifyAuthManager.handleCallback(code)) {
+            Log.d("MainActivity", "Auth succeeded")
+            authState.value = AuthState.Authenticated
+        } else {
+            Log.e("MainActivity", "handleCallback returned false, relaunching auth")
+            spotifyAuthManager.launchAuth(this@MainActivity)
         }
     }
 }

@@ -30,8 +30,11 @@ class HomeViewModel @Inject constructor(
                 repository.fetchAndSavePlaylist(url)
             } catch (e: IllegalArgumentException) {
                 _errorMessage.value = "Invalid Spotify playlist URL"
+            } catch (e: retrofit2.HttpException) {
+                val body = e.response()?.errorBody()?.string()
+                _errorMessage.value = "HTTP ${e.code()}: $body"
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to add playlist. Try again."
+                _errorMessage.value = "Failed: ${e.message ?: "Unknown error"}"
             }
         }
     }

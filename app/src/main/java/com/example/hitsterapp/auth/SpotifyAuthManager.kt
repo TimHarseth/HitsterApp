@@ -15,11 +15,17 @@ class SpotifyAuthManager @Inject constructor(
     private val tokenDataStore: TokenDataStore,
     private val spotifyTokenService: SpotifyTokenService
 ) {
+
     private var pendingCodeVerifier: String? = null
 
-    fun launchAuth(activity: Activity) {
+    suspend fun hasPendingVerifier(): Boolean =
+        pendingCodeVerifier != null || tokenDataStore.getCodeVerifier() != null
+
+    suspend fun launchAuth(activity: Activity) {
+        Log.d("SpotifyAuth", "launchAuth called")
         val verifier = PkceUtil.generateCodeVerifier()
         pendingCodeVerifier = verifier
+        tokenDataStore.saveCodeVerifier(verifier)
         val challenge = PkceUtil.generateCodeChallenge(verifier)
 
         val uri = Uri.parse("https://accounts.spotify.com/authorize").buildUpon()
@@ -35,23 +41,33 @@ class SpotifyAuthManager @Inject constructor(
     }
 
     suspend fun handleCallback(code: String): Boolean {
-        val verifier = pendingCodeVerifier ?: return false
+        val verifier = pendingCodeVerifier
+            ?: tokenDataStore.getCodeVerifier()
+            ?: run {
+                Log.e("SpotifyAuth", "No pending code verifier found")
+                return false
+            }
         return try {
+            Log.d("SpotifyAuth", "Exchanging code for token...")
             val response = spotifyTokenService.exchangeCode(
                 code = code,
                 redirectUri = BuildConfig.SPOTIFY_REDIRECT_URI,
                 clientId = BuildConfig.SPOTIFY_CLIENT_ID,
                 codeVerifier = verifier
             )
+            Log.d("SpotifyAuth", "Token exchange succeeded, access token: ${response.accessToken.take(8)}...")
             tokenDataStore.saveTokens(
                 accessToken = response.accessToken,
                 refreshToken = response.refreshToken ?: "",
                 expiresAt = System.currentTimeMillis() + (response.expiresIn * 1000L)
             )
             pendingCodeVerifier = null
+            tokenDataStore.clearCodeVerifier()
             true
         } catch (e: Exception) {
-            Log.e("SpotifyAuth", "Token exchange failed", e)
+            Log.e("SpotifyAuth", "Token exchange failed: ${e.message}", e)
+            pendingCodeVerifier = null
+            tokenDataStore.clearCodeVerifier()
             false
         }
     }

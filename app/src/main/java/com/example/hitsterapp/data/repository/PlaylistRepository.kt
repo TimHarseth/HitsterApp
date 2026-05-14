@@ -51,18 +51,18 @@ class PlaylistRepository @Inject constructor(
         val playlistInfo = spotifyApiService.getPlaylist(playlistId)
 
         val allItems = mutableListOf<TrackItem>()
-        allItems.addAll(playlistInfo.tracks.items)
-        var nextPage = playlistInfo.tracks.next
-        var offset = playlistInfo.tracks.items.size
-
-        while (nextPage != null) {
-            val page = spotifyApiService.getPlaylistTracks(playlistId, offset)
-            allItems.addAll(page.items)
-            nextPage = page.next
-            offset += page.items.size
+        var nextUrl: String? = null
+        playlistInfo.items?.let { firstPage ->
+            allItems.addAll(firstPage.items.orEmpty())
+            nextUrl = firstPage.next
+        }
+        while (nextUrl != null) {
+            val page = spotifyApiService.getTracksPage(nextUrl!!)
+            allItems.addAll(page.items.orEmpty())
+            nextUrl = if (page.items.isNullOrEmpty()) null else page.next
         }
 
-        val validTracks = allItems.mapNotNull { it.track }
+        val validTracks = allItems.mapNotNull { it.track }.filter { it.id != null }
 
         db.withTransaction {
             playlistDao.insert(
@@ -76,11 +76,11 @@ class PlaylistRepository @Inject constructor(
             trackDao.insertAll(
                 validTracks.map { track ->
                     TrackEntity(
-                        id = track.id,
+                        id = track.id!!,
                         playlistId = playlistId,
                         title = track.name,
-                        artists = track.artists.joinToString(", ") { it.name },
-                        releaseYear = track.album.releaseDate.take(4).toIntOrNull() ?: 0
+                        artists = track.artists.orEmpty().joinToString(", ") { it.name },
+                        releaseYear = track.album?.releaseDate?.take(4)?.toIntOrNull() ?: 0
                     )
                 }
             )
