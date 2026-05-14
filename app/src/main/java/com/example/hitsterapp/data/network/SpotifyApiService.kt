@@ -11,8 +11,7 @@ interface SpotifyApiService {
     @GET("playlists/{id}")
     suspend fun getPlaylist(
         @Path("id") playlistId: String,
-        @Query("market") market: String = "NO",
-        @Query("fields") fields: String = "name,items(next,items(track(id,name,artists(name),album(release_date),external_urls(spotify))))"
+        @Query("market") market: String = "NO"
     ): PlaylistResponse
 
     @GET

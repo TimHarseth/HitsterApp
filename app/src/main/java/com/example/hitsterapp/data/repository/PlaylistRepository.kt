@@ -12,10 +12,13 @@ import com.example.hitsterapp.data.db.entity.TrackEntity
 import com.example.hitsterapp.data.network.SpotifyApiService
 import com.example.hitsterapp.data.network.model.TrackItem
 import com.example.hitsterapp.util.SpotifyUrlParser
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG = "PlaylistRepository"
 
 data class PlaylistUiModel(
     val id: String,
@@ -49,6 +52,7 @@ class PlaylistRepository @Inject constructor(
             ?: throw IllegalStateException("Not authenticated with Spotify")
 
         val playlistInfo = spotifyApiService.getPlaylist(playlistId)
+        Log.d(TAG, "API response: name=${playlistInfo.name}, items=${playlistInfo.items?.items?.size}, next=${playlistInfo.items?.next}")
 
         val allItems = mutableListOf<TrackItem>()
         var nextUrl: String? = null
@@ -64,15 +68,16 @@ class PlaylistRepository @Inject constructor(
 
         val validTracks = allItems.mapNotNull { it.track }.filter { it.id != null }
 
+        val entity = PlaylistEntity(
+            id = playlistId,
+            name = playlistInfo.name,
+            url = url,
+            totalTrackCount = validTracks.size
+        )
+        Log.d(TAG, "Inserting PlaylistEntity: $entity")
+
         db.withTransaction {
-            playlistDao.insert(
-                PlaylistEntity(
-                    id = playlistId,
-                    name = playlistInfo.name,
-                    url = url,
-                    totalTrackCount = validTracks.size
-                )
-            )
+            playlistDao.insert(entity)
             trackDao.insertAll(
                 validTracks.map { track ->
                     TrackEntity(

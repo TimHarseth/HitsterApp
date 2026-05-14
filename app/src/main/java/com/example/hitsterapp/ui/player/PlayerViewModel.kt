@@ -44,8 +44,11 @@ class PlayerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            loadAndPlayNextTrack()
             val connected = remoteRepository.connect()
-            if (connected) loadAndPlayNextTrack()
+            if (connected) {
+                _uiState.value.currentTrack?.id?.let { remoteRepository.play(it) }
+            }
         }
     }
 

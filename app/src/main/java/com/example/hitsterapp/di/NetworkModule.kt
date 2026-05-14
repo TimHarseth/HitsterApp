@@ -8,6 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Named
@@ -34,12 +35,14 @@ object NetworkModule {
     @Provides
     @Singleton
     @Named("api")
-    fun provideApiRetrofit(authInterceptor: AuthInterceptor): Retrofit =
-        Retrofit.Builder()
+    fun provideApiRetrofit(authInterceptor: AuthInterceptor): Retrofit {
+        val logger = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+        return Retrofit.Builder()
             .baseUrl("https://api.spotify.com/v1/")
-            .client(OkHttpClient.Builder().addInterceptor(authInterceptor).build())
+            .client(OkHttpClient.Builder().addInterceptor(authInterceptor).addInterceptor(logger).build())
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
 
     @Provides
     @Singleton

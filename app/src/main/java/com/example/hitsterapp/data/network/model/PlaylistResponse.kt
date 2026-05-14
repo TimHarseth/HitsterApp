@@ -13,7 +13,7 @@ data class TracksPage(
 )
 
 data class TrackItem(
-    val track: SpotifyTrack?
+    @SerializedName("item") val track: SpotifyTrack?
 )
 
 data class SpotifyTrack(
