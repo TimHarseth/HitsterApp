@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.hitsterapp.ui.home.HomeScreen
+import com.example.hitsterapp.ui.player.PlayerScreen
 
 @Composable
 fun HitsterNavGraph(navController: NavHostController = rememberNavController()) {
@@ -23,7 +24,9 @@ fun HitsterNavGraph(navController: NavHostController = rememberNavController()) 
             route = Screen.PLAYER,
             arguments = listOf(navArgument("playlistId") { type = NavType.StringType })
         ) {
-            androidx.compose.material3.Text("Player — coming soon")
+            PlayerScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }
